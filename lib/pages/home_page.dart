@@ -48,6 +48,12 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             ListTile(
+              title: const Text('Hobbies'),
+              onTap: () {
+                Navigator.pushNamed(context, '/hobbies');
+              },
+            ),
+            ListTile(
               title: const Text('Contact'),
               onTap: () {
                 Navigator.pushNamed(context, '/contact');
@@ -86,8 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
               TextButton(
                 onPressed: (() => {Navigator.pushNamed(context, '/contact')}),
                 child: Container(
-                  padding: EdgeInsets.all(
-                      8.0), // İstediğiniz padding miktarını ayarlayabilirsiniz
+                  padding: EdgeInsets.all(8.0),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     color: Colors.black,
@@ -95,8 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Text(
                     'Contact Me',
                     style: TextStyle(
-                      color: Colors
-                          .white, // Yazı rengini beyaz olarak ayarladık, arka plan kırmızı olduğu için daha iyi okunur.
+                      color: Colors.white,
                     ),
                   ),
                 ),

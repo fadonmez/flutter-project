@@ -1,4 +1,5 @@
 import 'package:firsttry/pages/contact.dart';
+import 'package:firsttry/pages/hobbies.dart';
 import 'package:firsttry/pages/home_page.dart';
 import 'package:firsttry/pages/projects.dart';
 import 'package:firsttry/pages/skills.dart';
@@ -31,6 +32,9 @@ class MyApp extends StatelessWidget {
             ),
         '/contact': (context) => ContactPage(
               title: 'Contact',
+            ),
+        '/hobbies': (context) => HobbiesPage(
+              title: 'Hobbies',
             ),
       },
     );
