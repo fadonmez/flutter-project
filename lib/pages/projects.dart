@@ -1,82 +1,82 @@
-import 'package:firsttry/util/project_card.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:firsttry/database_helper.dart';
+import 'package:firsttry/util/project_card.dart';
+import 'package:firsttry/util/add_project_page.dart';
 
-class ProjectsPage extends StatelessWidget {
+class ProjectsPage extends StatefulWidget {
   ProjectsPage({super.key, required this.title});
   final String title;
 
-  final List<Map<String, String>> dummyProjects = [
-    {
-      "title": "Flutter Project",
-      "description": "Developed a mobile application using Flutter framework.",
-    },
-    {
-      "title": "E-commerce Website",
-      "description":
-          "Designed and implemented an e-commerce website using React.",
-    },
-    {
-      "title": "Weather App",
-      "description": "Created a weather forecasting application using Swift.",
-    },
-    {
-      "title": "Portfolio Website",
-      "description":
-          "Built a personal portfolio website using HTML, CSS, and JavaScript.",
-    },
-    {
-      "title": "Todo List Application",
-      "description":
-          "Developed a task management application using Flutter and Firebase.",
-    },
-    {
-      "title": "Blog Website",
-      "description":
-          "Designed and developed a blog website using Django framework.",
-    },
-    {
-      "title": "Chat Application",
-      "description":
-          "Built a real-time chat application using Node.js and Socket.IO.",
-    },
-    {
-      "title": "Online Food Ordering System",
-      "description":
-          "Implemented an online food ordering system with a responsive UI.",
-    },
-    {
-      "title": "Data Visualization Dashboard",
-      "description":
-          "Created a dashboard for visualizing data using React and D3.js.",
-    },
-    {
-      "title": "Expense Tracker App",
-      "description":
-          "Developed an expense tracking mobile application with Flutter.",
-    },
-  ];
+  @override
+  _ProjectsPageState createState() => _ProjectsPageState();
+}
+
+class _ProjectsPageState extends State<ProjectsPage> {
+  late Future<List<Map<String, dynamic>>> _projectsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _projectsFuture = DatabaseHelper.instance.fetchProjects();
+  }
+
+  void _refreshProjects() {
+    setState(() {
+      _projectsFuture = DatabaseHelper.instance.fetchProjects();
+    });
+  }
+
+  void _deleteProject(int id) async {
+    await DatabaseHelper.instance.deleteProject(id);
+    _refreshProjects();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ListView.builder(
-            itemCount: dummyProjects.length,
-            itemBuilder: (context, index) {
-              return ProjectCard(
-                title: dummyProjects[index]["title"] ?? "",
-                description: dummyProjects[index]["description"] ?? "",
-              );
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _projectsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No projects found.'));
+              } else {
+                final projects = snapshot.data!;
+                return ListView.builder(
+                  itemCount: projects.length,
+                  itemBuilder: (context, index) {
+                    final project = projects[index];
+                    return ProjectCard(
+                      id: project["id"] as int,
+                      title: project["title"] as String,
+                      description: project["description"] as String,
+                      onDelete: () => _deleteProject(project["id"] as int),
+                    );
+                  },
+                );
+              }
             },
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddProjectPage()),
+          );
+          _refreshProjects();
+        },
+        child: Icon(Icons.add),
       ),
     );
   }

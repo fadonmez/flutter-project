@@ -1,36 +1,54 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class SkillCard extends StatelessWidget {
-  const SkillCard({super.key, required this.title, required this.description});
+  final int id;
   final String title;
   final String description;
+  final Function onDelete;
+
+  SkillCard({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Container(
-        height: 120,
-        decoration: BoxDecoration(
-          color: Colors.green[200],
-          borderRadius: BorderRadius.circular(16.0),
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: ListTile(
+        title: Text(title),
+        subtitle: Text(description),
+        trailing: IconButton(
+          icon: Icon(Icons.delete),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Delete Skill'),
+                  content: Text('Are you sure you want to delete this skill?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        onDelete();
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Delete'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         ),
-        child: Center(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-            )
-          ],
-        )),
       ),
     );
   }

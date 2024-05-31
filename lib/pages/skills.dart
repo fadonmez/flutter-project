@@ -1,77 +1,82 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors
-
-import 'package:firsttry/util/skill_card.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:firsttry/database_helper.dart';
+import 'package:firsttry/util/skill_card.dart';
+import 'package:firsttry/util/add_skill_page.dart';
 
-class SkillsPage extends StatelessWidget {
+class SkillsPage extends StatefulWidget {
   SkillsPage({super.key, required this.title});
   final String title;
 
-  final List<Map<String, String>> skills = [
-    {
-      "title": "Flutter",
-      "description":
-          "Framework for building native applications for mobile, web, and desktop from a single codebase."
-    },
-    {
-      "title": "Dart",
-      "description": "Programming language used to build Flutter applications."
-    },
-    {
-      "title": "Python",
-      "description":
-          "High-level programming language for general-purpose programming."
-    },
-    {
-      "title": "JavaScript",
-      "description":
-          "Programming language that is widely used for web development."
-    },
-    {
-      "title": "React",
-      "description": "JavaScript library for building user interfaces."
-    },
-    {
-      "title": "Node.js",
-      "description":
-          "JavaScript runtime built on Chrome's V8 JavaScript engine."
-    },
-    {
-      "title": "HTML",
-      "description": "Standard markup language for creating web pages."
-    },
-    {
-      "title": "CSS",
-      "description":
-          "Style sheet language used for describing the presentation of a document written in HTML."
-    },
-    {"title": "Java", "description": "Object-oriented programming language."},
-    {
-      "title": "Swift",
-      "description":
-          "Programming language for iOS, macOS, watchOS, and tvOS development."
-    },
-  ];
+  @override
+  _SkillsPageState createState() => _SkillsPageState();
+}
+
+class _SkillsPageState extends State<SkillsPage> {
+  late Future<List<Map<String, dynamic>>> _skillsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _skillsFuture = DatabaseHelper.instance.fetchSkills();
+  }
+
+  void _refreshSkills() {
+    setState(() {
+      _skillsFuture = DatabaseHelper.instance.fetchSkills();
+    });
+  }
+
+  void _deleteSkill(int id) async {
+    await DatabaseHelper.instance.deleteSkill(id);
+    _refreshSkills();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: skills.length,
-          itemBuilder: (context, index) {
-            return SkillCard(
-              title: skills[index]["title"] ?? "",
-              description: skills[index]["description"] ?? "",
-            );
-          },
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _skillsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No skills found.'));
+              } else {
+                final skills = snapshot.data!;
+                return ListView.builder(
+                  itemCount: skills.length,
+                  itemBuilder: (context, index) {
+                    final skill = skills[index];
+                    return SkillCard(
+                      id: skill["id"] as int,
+                      title: skill["title"] as String,
+                      description: skill["description"] as String,
+                      onDelete: () => _deleteSkill(skill["id"] as int),
+                    );
+                  },
+                );
+              }
+            },
+          ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddSkillPage()),
+          );
+          _refreshSkills();
+        },
+        child: Icon(Icons.add),
       ),
     );
   }

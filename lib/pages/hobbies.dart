@@ -1,82 +1,82 @@
 import 'package:firsttry/util/hobby_card.dart';
-import 'package:firsttry/util/project_card.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:firsttry/database_helper.dart';
+import 'package:firsttry/util/add-hobby.dart';
 
-class HobbiesPage extends StatelessWidget {
+class HobbiesPage extends StatefulWidget {
   HobbiesPage({super.key, required this.title});
   final String title;
 
-  final List<Map<String, String>> dummyHobbies = [
-    {
-      "title": "Gardening",
-      "description": "Enjoy growing various plants and flowers in my garden.",
-    },
-    {
-      "title": "Cooking",
-      "description":
-          "Passionate about trying out new recipes and experimenting with different cuisines.",
-    },
-    {
-      "title": "Photography",
-      "description":
-          "Love capturing moments and exploring different photography techniques.",
-    },
-    {
-      "title": "Hiking",
-      "description":
-          "Enjoy exploring nature trails and trekking through mountains.",
-    },
-    {
-      "title": "Painting",
-      "description":
-          "Express myself through art and enjoy painting landscapes and abstracts.",
-    },
-    {
-      "title": "Reading",
-      "description":
-          "Love diving into books across various genres, from fiction to non-fiction.",
-    },
-    {
-      "title": "Yoga",
-      "description":
-          "Practice yoga regularly for physical and mental well-being.",
-    },
-    {
-      "title": "Traveling",
-      "description":
-          "Passionate about exploring new cultures, cuisines, and destinations.",
-    },
-    {
-      "title": "Playing Musical Instruments",
-      "description": "Enjoy playing the guitar and piano in my free time.",
-    },
-    {
-      "title": "DIY Projects",
-      "description": "Love getting creative and building things from scratch.",
-    },
-  ];
+  @override
+  _HobbiesPageState createState() => _HobbiesPageState();
+}
+
+class _HobbiesPageState extends State<HobbiesPage> {
+  late Future<List<Map<String, dynamic>>> _hobbiesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _hobbiesFuture = DatabaseHelper.instance.fetchHobbies();
+  }
+
+  void _refreshHobbies() {
+    setState(() {
+      _hobbiesFuture = DatabaseHelper.instance.fetchHobbies();
+    });
+  }
+
+  void _deleteHobby(int id) async {
+    await DatabaseHelper.instance.deleteHobby(id);
+    _refreshHobbies();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ListView.builder(
-            itemCount: dummyHobbies.length,
-            itemBuilder: (context, index) {
-              return HobbyCard(
-                title: dummyHobbies[index]["title"] ?? "",
-                description: dummyHobbies[index]["description"] ?? "",
-              );
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _hobbiesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No hobbies found.'));
+              } else {
+                final hobbies = snapshot.data!;
+                return ListView.builder(
+                  itemCount: hobbies.length,
+                  itemBuilder: (context, index) {
+                    final hobby = hobbies[index];
+                    return HobbyCard(
+                      id: hobby["id"] as int,
+                      title: hobby["title"] as String,
+                      description: hobby["description"] as String,
+                      onDelete: () => _deleteHobby(hobby["id"] as int),
+                    );
+                  },
+                );
+              }
             },
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddHobbyPage()),
+          );
+          _refreshHobbies();
+        },
+        child: Icon(Icons.add),
       ),
     );
   }
